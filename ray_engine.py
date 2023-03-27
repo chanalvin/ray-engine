@@ -45,14 +45,14 @@ def rayCasting():
 
         wall_height = math.floor(settings.HALF_H / distance)
 
-        ceiling_colour = 'black'
+        ceiling_colour = 'Gainsboro'
         #wall_colour = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
         match wall:
             case 1:
-                wall_colour = 'brown'
+                wall_colour = 'LightGoldenrodYellow'
             case default:
-                wall_colour = 'red'
-        floor_colour = 'grey'
+                wall_colour = 'Fuchsia'
+        floor_colour = 'SlateGray'
 
         # Draw
         pygame.draw.line(window, ceiling_colour, (ray_count, 0), (ray_count, settings.HALF_H - wall_height)) # ceiling

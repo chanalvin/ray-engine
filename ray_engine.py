@@ -63,32 +63,41 @@ def rayCasting():
 
 
 def keyControls():
-    match event.key:
-        case pygame.K_UP:
-            player_cos = math.cos(degToRad(player.angle)) * settings.SPEED
-            player_sin = math.sin(degToRad(player.angle)) * settings.SPEED
-            new_x = player.x + player_cos
-            new_y = player.y + player_sin
+    rel_mouse = pygame.mouse.get_rel()
+    rel_x = rel_mouse[0]
+    rel_y = rel_mouse[1]
 
-            if test_cell.lvl_map[math.floor(new_y)][math.floor(new_x)] == 0:
-                player.x = new_x
-                player.y = new_y
+    match event.type:
+        case pygame.KEYDOWN:
+            match event.key:
+                case pygame.K_UP:
+                    player_cos = math.cos(degToRad(player.angle)) * settings.SPEED
+                    player_sin = math.sin(degToRad(player.angle)) * settings.SPEED
+                    new_x = player.x + player_cos
+                    new_y = player.y + player_sin
 
-        case pygame.K_DOWN:
-            player_cos = math.cos(degToRad(player.angle)) * settings.SPEED
-            player_sin = math.sin(degToRad(player.angle)) * settings.SPEED
-            new_x = player.x - player_cos
-            new_y = player.y - player_sin
+                    if test_cell.lvl_map[math.floor(new_y)][math.floor(new_x)] == 0:
+                        player.x = new_x
+                        player.y = new_y
 
-            if test_cell.lvl_map[math.floor(new_y)][math.floor(new_x)] == 0:
-                player.x = new_x
-                player.y = new_y
+                case pygame.K_DOWN:
+                    player_cos = math.cos(degToRad(player.angle)) * settings.SPEED
+                    player_sin = math.sin(degToRad(player.angle)) * settings.SPEED
+                    new_x = player.x - player_cos
+                    new_y = player.y - player_sin
 
-        case pygame.K_LEFT:
-            player.angle -= settings.TURNRATE
+                    if test_cell.lvl_map[math.floor(new_y)][math.floor(new_x)] == 0:
+                        player.x = new_x
+                        player.y = new_y
 
-        case pygame.K_RIGHT:
-            player.angle += settings.TURNRATE
+                case pygame.K_LEFT:
+                    player.angle -= settings.TURNRATE * rel_x
+
+                case pygame.K_RIGHT:
+                    player.angle += settings.TURNRATE * rel_y
+
+        case pygame.MOUSEMOTION:
+            match event. 
 
 
 running = True
@@ -99,6 +108,8 @@ while running:
             case pygame.QUIT:
                 running = False
             case pygame.KEYDOWN:
+                keyControls()
+            case pygame.MOUSEMOTION:
                 keyControls()
 
     window.blit(background, (0, 0))

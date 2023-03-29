@@ -62,11 +62,10 @@ def rayCasting():
 
 
 def posCalc(key):
-    if key == pygame.K_w or key == pygame.K_s:
-        angle = degToRad(player.angle)
-
-    elif key == pygame.K_a or key == pygame.K_d:
+    if key == pygame.K_a or key == pygame.K_d:
         angle = degToRad(player.angle) + math.pi/2
+    else:
+        angle = degToRad(player.angle)
 
     player_cos = math.cos(angle) * settings.SPEED #*sidestrafe 0.5 mod
     player_sin = math.sin(angle) * settings.SPEED
@@ -74,10 +73,12 @@ def posCalc(key):
     if key == pygame.K_w or key == pygame.K_d:
         x = player.x + player_cos
         y = player.y + player_sin
-    
     elif key == pygame.K_s or key == pygame.K_a:
-        x = player.x - player.cos
-        y = player.y - player.sin
+        x = player.x - player_cos
+        y = player.y - player_sin
+    else:
+        x = player.x
+        y = player.y
 
     if test_cell.lvl_map[math.floor(y)][math.floor(x)] == 0:
         player.x = x
@@ -91,35 +92,7 @@ def keyControls():
 
     match event.type:
         case pygame.KEYDOWN:
-            match event.key:
-                case pygame.K_w:
-                    posCalc(pygame.K_w)
-
-                case pygame.K_s:
-                    player_cos = math.cos(degToRad(player.angle)) * settings.SPEED
-                    player_sin = math.sin(degToRad(player.angle)) * settings.SPEED
-                    new_x = player.x - player_cos
-                    new_y = player.y - player_sin
-
-                    collisionCheck(new_x, new_y)
-
-                case pygame.K_a:
-                    player_cos = math.cos(degToRad(player.angle) + math.pi/2) * settings.SPEED/2
-                    player_sin = math.sin(degToRad(player.angle) + math.pi/2) * settings.SPEED/2
-                    new_x = player.x - player_cos
-                    new_y = player.y - player_sin
-
-                    collisionCheck(new_x, new_y)
-
-                case pygame.K_d:
-                    player_cos = math.cos(degToRad(player.angle) + math.pi/2) * settings.SPEED/2
-                    player_sin = math.sin(degToRad(player.angle) + math.pi/2) * settings.SPEED/2
-                    new_x = player.x + player_cos
-                    new_y = player.y + player_sin
-
-                    if test_cell.lvl_map[math.floor(new_y)][math.floor(new_x)] == 0:
-                        player.x = new_x
-                        player.y = new_y
+            posCalc(event.key)
 
 
         case pygame.MOUSEMOTION:

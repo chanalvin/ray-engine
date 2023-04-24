@@ -1,124 +1,127 @@
-import pygame
+from tkinter import Tk, Canvas, Frame, BOTH
+
 import math
 import time
 
-import settings
-import ray
-import player
-# import game_data
 import test_cell
 
-pygame.init()
 
-pygame.display.set_caption('Ray')
-window = pygame.display.set_mode((settings.WIDTH, settings.HEIGHT))
+WIN_WIDTH = 640
+WIN_HEIGHT = 480
 
-background = pygame.Surface((settings.WIDTH, settings.HEIGHT))
-background.fill(pygame.Color('#000000'))
+FOV = 60
+REND_DELAY = 5
 
-def degToRad(degree):
-    degree *= math.pi / 180
-    return degree
+R_PRECISION = 64
+# what a stupid name
+RAY_INC = FOV / WIN_WIDTH
+
+P_SPEED = 0.5
+
+C_COLOR = 'Gainsboro'
+W_COLOR = 'LightGoldenrodYellow'
+F_COLOR = 'SlateGray'
+
+player = {
+    'x': 6,
+    'y': 6,
+    'angle': 60,
+}
 
 
-def rayCasting():
-    ray_angle = player.angle - settings.HALF_FOV
+# le self
+class Stuff:
 
-    for ray_count in range(settings.WIDTH):
-        ray.x = player.x
-        ray.y = player.y    
+    def __init__(self):
+        self.window = Tk()
+        self.canvas = Canvas(self.window, width=WIN_WIDTH, height=WIN_HEIGHT)
+        self.window.title('My name is Ray')
+        self.window.bind('<Key>', key_pressed)
+        self.canvas.pack()
 
-        ray_cos = math.cos(degToRad(ray_angle)) / ray.PRECISION
-        ray_sin = math.sin(degToRad(ray_angle)) / ray.PRECISION
+    def run(self):
+        raycast(self.canvas)
+        
+        self.window.after(REND_DELAY, self.update)
+        self.window.mainloop()
 
-        # checking for wall collisions (simpler than dda)
+    def update(self):
+        raycast(self.canvas)
+
+        self.window.after_idle(self.update)
+
+
+def deg_conv(angle):
+    angle *= math.pi / 180
+    
+    return angle
+
+
+def raycast(canvas): # lol
+    canvas.delete('all')
+
+    ray_angle = player['angle'] - FOV/2
+    for ray_count in range(WIN_WIDTH):
+        ray_x = player['x']
+        ray_y = player['y']
+
+        ray_cos = math.cos(deg_conv(ray_angle)) / R_PRECISION
+        ray_sin = math.sin(deg_conv(ray_angle)) / R_PRECISION
+
         wall = 0
         while wall == 0:
-            ray.x += ray_cos
-            ray.y += ray_sin
-            wall = test_cell.lvl_map[math.floor(ray.y)][math.floor(ray.x)]
+            ray_x += ray_cos
+            ray_y += ray_sin
+            # TODO: change level/map selection method
+            wall = test_cell.lvl_map[math.floor(ray_y)][math.floor(ray_x)]
 
-        # normalizes the ray vector and finds its magnitude (distance) w/ Pythagorean Theorem
-        distance = math.sqrt(math.pow(player.x - ray.x, 2) + math.pow(player.y - ray.y, 2))
-        distance *= math.cos(degToRad(ray_angle - player.angle)) # fisheye fix
+        distance = math.sqrt(math.pow(player['x'] - ray_x, 2) + math.pow(player['y'] - ray_y, 2))
+        distance *= math.cos(deg_conv(ray_angle - player['angle']))
 
-        wall_height = math.floor(settings.HALF_H / distance)
+        # rename to w_height for consistency?
+        wall_height = math.floor((WIN_HEIGHT/2) / distance)
 
-        ceiling_colour = 'Gainsboro'
-        #wall_colour = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
-        match wall:
-            case 1:
-                wall_colour = 'LightGoldenrodYellow'
-            case default:
-                wall_colour = 'Fuchsia'
-        floor_colour = 'SlateGray'
+        canvas.create_line((ray_count, 0), (ray_count, WIN_HEIGHT/2 - wall_height), fill=C_COLOR)
+        canvas.create_line((ray_count, WIN_HEIGHT/2 - wall_height), (ray_count, WIN_HEIGHT/2 + wall_height), fill=W_COLOR)
+        canvas.create_line((ray_count, WIN_HEIGHT/2 + wall_height), (ray_count, WIN_HEIGHT), fill=F_COLOR)
 
-        # Draw
-        pygame.draw.line(window, ceiling_colour, (ray_count, 0), (ray_count, settings.HALF_H - wall_height)) # ceiling
-        pygame.draw.line(window, wall_colour, (ray_count, settings.HALF_H - wall_height), (ray_count, settings.HALF_H + wall_height)) # wall
-        pygame.draw.line(window, floor_colour, (ray_count, settings.HALF_H + wall_height), (ray_count, settings.HEIGHT)) # floor
-
-        ray_angle += ray.INCREMENT
+        ray_angle += RAY_INC
 
 
-def posCalc(key):
-    if key == pygame.K_a or key == pygame.K_d:
-        angle = degToRad(player.angle) + math.pi/2
-    else:
-        angle = degToRad(player.angle)
+def key_pressed(event):
+    key = event.char
 
-    player_cos = math.cos(angle) * settings.SPEED #*sidestrafe 0.5 mod
-    player_sin = math.sin(angle) * settings.SPEED
+    # collapse a couple of these together
+    match key:
+        case 'a' | 'd':
+            angle = deg_conv(player['angle']) + math.pi/2
+        case _:
+            angle = deg_conv(player['angle'])
+    
+    player_cos = math.cos(angle) * P_SPEED
+    player_sin = math.sin(angle) * P_SPEED
 
-    if key == pygame.K_w or key == pygame.K_d:
-        x = player.x + player_cos
-        y = player.y + player_sin
-    elif key == pygame.K_s or key == pygame.K_a:
-        x = player.x - player_cos
-        y = player.y - player_sin
-    else:
-        x = player.x
-        y = player.y
+    # such a weird way to calculate
+    match key:
+        case 'w' | 'd':
+            x = player['x'] + player_cos
+            y = player['y'] + player_sin
+        case 's' | 'a':
+            x = player['x'] - player_cos
+            y = player['y'] - player_sin
+        case _:
+            x = player['x']
+            y = player['y']
 
     if test_cell.lvl_map[math.floor(y)][math.floor(x)] == 0:
-        player.x = x
-        player.y = y
+        player['x'] = x
+        player['y'] = y
 
 
-def keyControls():
-    rel_mouse = pygame.mouse.get_rel()
-    rel_x = rel_mouse[0]
-    rel_y = rel_mouse[1]
-
-    match event.type:
-        case pygame.KEYDOWN:
-            posCalc(event.key)
+def main():
+    stuff = Stuff()
+    stuff.run()
 
 
-        case pygame.MOUSEMOTION:
-            player.angle += settings.TURNRATE * rel_x
-
-
-pygame.mouse.set_visible(False)    # hides mouse cursor ingame
-pygame.event.set_grab(True)    # locks mouse in window
-
-running = True
-while running:
-    events = pygame.event.get()
-    for event in events:
-        match event.type:
-            case pygame.QUIT:
-                running = False
-            case pygame.KEYDOWN:
-                keyControls()
-            case pygame.MOUSEMOTION:
-                pygame.mouse.set_pos([settings.WIDTH/2, settings.HEIGHT/2])
-                keyControls()
-
-    window.blit(background, (0, 0))
-
-    rayCasting()
-
-    time.sleep(settings.RENDER_DELAY)
-
-    pygame.display.update()
+if __name__ == '__main__':
+    main()
